@@ -8,5 +8,7 @@
   },
   "author": "Chandra Galbiati",
   "license": "ISC",
-  "dependencies": {}
+  "dependencies": {
+    "bluebird": "^3.0.6"
+  }
 }
