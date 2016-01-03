@@ -156,4 +156,12 @@ var playAgain = function(game){
 
 playGame();
 
+module.exports = {
+	playGame: playGame,
+	getPoss: getPoss,
+	promptRow: promptRow,
+	nextTurn: nextTurn,
+	// playAgain: playAgain
+};
+
 
