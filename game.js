@@ -4,6 +4,7 @@ var Game = function(playersArr, numCols, numRows){
 	this.board = this.makeBoard(numCols);
 	this.height = numRows;
 	this.active = '1';
+	this.moveType = 'a';
 };
 
 //holds player name and accumulated score

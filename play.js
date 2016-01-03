@@ -28,8 +28,8 @@ var prepGame = function(){
 	});
 };
 
-//prompts user for number of players
-//only accepts 1 or 3
+//prompts user for something based on message
+//only accepts answers in choices array
 //returns a promise for a string
 var getPoss = function(message, choicesArr, errMessage){
 	var numPlayers; //will be string not number
@@ -72,7 +72,7 @@ var nextTurn = function(game){
 	return promptRow(game[game.active], game)
 	.then(function(strCol){
 		var colNum = Number(strCol);
-		game.board[colNum].push(game.active);
+		game.moveType === 'a' ? game.board[colNum].push(game.active) : game.board[colNum].shift();
 		if (game.checkWin(colNum)){
 			game.printWin();
 			return playAgain(game);
@@ -83,9 +83,6 @@ var nextTurn = function(game){
 	});
 };
 
-// Board.prototype.addToColl = function(colNum, sym){
-// 	this.board[colNum - 1].push(sym);
-// };
 
 //returns promise for col num to play (string)
 var promptRow = function(player, game){
@@ -93,14 +90,42 @@ var promptRow = function(player, game){
 	//no ai, computer just plays random
 	if (player.name === 'Computer') return Promise.resolve(Math.floor(Math.random()*game.board.length).toString());
 	else {
-		var choices = [];
+		game.printBoard();
+		return getPoss('Do you want to add a peice or remove one?(a/r) ', ['a', 'r'], 'That\'s not a valid choice.  Please type "a" or "r".')
+		.then(function(answer){
+			if(answer === 'a'){
+				return addPiece(game);
+			} else {
+				var choices = [];
+				//construct choices based on characters at board cols [0]
+				for (var i=0; i<game.board.length; i++){
+					if (game.board[i][0] === game.active) choices.push(String(i));
+				}
+				if (!choices.length) {
+					process.stdout.write('Sorry, you do not have any peices at the bottom of the board.\n');
+					return addPiece(game);
+				}
+				game.moveType = 'r';
+				return getPoss('Enter a collumn to remove your piece from: ', choices, 'Sorry, you can only remove from a collumn with your piece at the bottom')
+			}
+
+		});
+
+
+		}
+};
+
+function addPiece(game){
+	game.moveType = 'a';
+	var choices = [];
 		for(var i=0; i<game.board.length; i++){
 			choices.push(i.toString());
 		}
-		game.printBoard();
 		return getPoss('Enter a collumn number to drop your piece ', choices, 'That\'s not a valid choice. Please try again. ');
-	}
-};
+}
+
+
+// remove path
 
 //prompt + stdin data return wrapped in a promise to allow chaining
 //returns promise for data (string)
