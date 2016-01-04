@@ -32,7 +32,6 @@ var prepGame = function(){
 //only accepts answers in choices array
 //returns a promise for a string
 var getPoss = function(message, choicesArr, errMessage){
-	var numPlayers; //will be string not number
 	return promtAndInput(message)
 	.then(function(resp){
 		if (!choicesArr.some(function(choice){
@@ -91,8 +90,9 @@ var promptRow = function(player, game){
 	if (player.name === 'Computer') return Promise.resolve(Math.floor(Math.random()*game.board.length).toString());
 	else {
 		game.printBoard();
-		return getPoss('Do you want to add a peice or remove one?(a/r) ', ['a', 'r'], 'That\'s not a valid choice.  Please type "a" or "r".')
+		return getPoss('Do you want to add a piece or remove one?(a/r) ', ['a', 'r'], 'That\'s not a valid choice.  Please type "a" or "r".')
 		.then(function(answer){
+			console.log('GotToHERE!!!!!')
 			if(answer === 'a'){
 				return addPiece(game);
 			} else {
@@ -161,7 +161,7 @@ module.exports = {
 	getPoss: getPoss,
 	promptRow: promptRow,
 	nextTurn: nextTurn,
-	// playAgain: playAgain
+	promtAndInput: promtAndInput
 };
 
 

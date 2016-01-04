@@ -42,79 +42,98 @@ Game.prototype.printBoard = function(){
 };
 
 //constructs paths then checks for win
-//returns true or false
+//returns false or a playerNum string
 Game.prototype.checkWin = function(colNum){
 	var game = this;
 	var pathsArr = [];
 	var rowNum = this.board[colNum].length-1;
-	var diagUpArr = [];
-	var diagDownArr = [];
-	var rowArr = [];
-	var start;
+
 
 	//push collumn into pathsArr if at least 4
 	if (rowNum > 2) pathsArr.push(this.board[colNum]);
-
-	//push row into pathsArr
-	this.board.forEach(function(col){
-		rowArr.push(col[rowNum] || 0);
-		// if the board is empty here, I am pushing 0 to the array because it will never be the player symbol
-		//it would also be possible to only collect and check paths that have been played, but with a maximum of 4 7-piece paths to check, this seems fine
-	});
-	if (rowArr.length >= 4) pathsArr.push(rowArr);
-
-	//make diagonal up path
-	//Not DRY!!! **should be refactored**
-	var row = rowNum;
-	var col = colNum;
-	while (row>=0 && col>=0){
-		diagUpArr.unshift(this.board[col][row] || 0);
-		row--;
-		col--;
-	}
-	row = rowNum+1;
-	col = colNum+1;
-	while (row<this.height && col<this.board.length){
-		diagUpArr.push(this.board[col][row] || 0);
-		row++;
-		col++;
-	}
-
-	//make diag down arr
-	row = rowNum;
-	col = colNum;
-	while (row>=0 && col<this.board.length){
-		diagDownArr.push(this.board[col][row] || 0);
-		row--;
-		col++;
-	}
-	row = rowNum+1;
-	col = colNum-1;
-	while (row<this.height && col>=0){
-		diagDownArr.unshift(this.board[col][row] || 0);
-		row++;
-		col--;
-	}
-
-	pathsArr.push(diagUpArr);
-	pathsArr.push(diagDownArr);
+	if (game.moveType === 'r' && game[game.active].name !== 'Computer'){
+		for (var i = 0; i<=rowNum; i++){
+			makeRowsAndDiags(i);
+		}
+	} else makeRowsAndDiags(rowNum);
 
 	//checks paths for 4 in a row
-	return pathsArr.some(function(path){
-		return countConnect(path, game.active);
+	var win1 = pathsArr.some(function(path){
+		return countConnect(path, '1');
 	});
+	if (win1) return '1';
+	else {
+		win2 = pathsArr.some(function(path){
+			return countConnect(path, '2');
+		});
+		return win2 ? '2': false;
+	}
+
+	function makeRowsAndDiags(rowNum){
+		console.log('checking for', rowNum)
+		var diagUpArr = [];
+		var diagDownArr = [];
+		var rowArr = [];
+		
+		//push row into pathsArr
+		var min = colNum - 3 > 0 ? colNum - 3 : 0;
+		var max = colNum + 4 < game.board.length ? colNum + 4 : game.board.length;
+		
+		for(var i = min; i < max; i++){
+			rowArr.push(game.board[i][rowNum] || 0);
+			// if the board is empty here, I am pushing 0 to the array because it will never be the player symbol
+			//it would also be possible to only collect and check paths that have been played, but with a maximum of 4 7-piece paths to check, this seems fine
+		}
+		if (rowArr.length >= 4) pathsArr.push(rowArr);
+
+		//make diagonal up path
+		//Not DRY!!! **should be refactored**
+		var row = rowNum;
+		var col = colNum;
+		while (row>=0 && col>=0){
+			diagUpArr.unshift(game.board[col][row] || 0);
+			row--;
+			col--;
+		}
+		row = rowNum+1;
+		col = colNum+1;
+		while (row<game.height && col<game.board.length){
+			diagUpArr.push(game.board[col][row] || 0);
+			row++;
+			col++;
+		}
+
+		//make diag down arr
+		row = rowNum;
+		col = colNum;
+		while (row>=0 && col<game.board.length){
+			diagDownArr.push(game.board[col][row] || 0);
+			row--;
+			col++;
+		}
+		row = rowNum+1;
+		col = colNum-1;
+		while (row<game.height && col>=0){
+			diagDownArr.unshift(game.board[col][row] || 0);
+			row++;
+			col--;
+		}
+
+		pathsArr.push(diagUpArr);
+		pathsArr.push(diagDownArr);
+	}
 };
 
 
 //checks path for win
-//returns true or false
+//returns false or a playerNum string
 countConnect = function(arr, sym){
 	var count = 0;
 	i = 0;
 	for (var i=0; i<arr.length; i++){
 		if(arr[i] === sym){
 			count++;
-			if(count >= 4) return true;
+			if(count >= 4) return sym;
 		} else count = 0;
 	}
 	return false;
