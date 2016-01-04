@@ -32,8 +32,11 @@ var prepGame = function(){
 //only accepts answers in choices array
 //returns a promise for a string
 var getPoss = function(message, choicesArr, errMessage){
+	console.log('running getPoss')
+	console.log(promtAndInput.toString())
 	return promtAndInput(message)
 	.then(function(resp){
+		console.log('resp gotten from promptAndInput')
 		if (!choicesArr.some(function(choice){
 			return choice === resp;
 		})) {
@@ -129,12 +132,15 @@ function addPiece(game){
 
 //prompt + stdin data return wrapped in a promise to allow chaining
 //returns promise for data (string)
-function promtAndInput(message){
+var promtAndInput = function(message){
+	console.log('running prompt')
 	var returnData;
 	return new Promise(function(fulfill, reject){
+		// console.log(message)
 		process.stdout.write(message);
 		process.stdin.once('data', function(data) {
 			returnData = data.toString().trim(); 
+			console.log('prompt returning', returnData)
 			fulfill(returnData);
 		});
 	});
@@ -154,9 +160,14 @@ var playAgain = function(game){
 	});
 };
 
-playGame();
+// playGame();
+
+var myfunc = function(){
+	return 'myfunc';
+}
 
 module.exports = {
+	myfunc: myfunc,
 	playGame: playGame,
 	getPoss: getPoss,
 	promptRow: promptRow,

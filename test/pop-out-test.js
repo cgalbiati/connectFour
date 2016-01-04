@@ -11,10 +11,13 @@ var namesArr = ['player1', 'Computer'];
 var getPoss = playFns.getPoss;
 var promptRow = playFns.promptRow;
 var nextTurn = playFns.nextTurn;
+var promtAndInput = playFns.promtAndInput;
 // var playAgain = playFns.playAgain;
 
 var boardNoRemoves = [['2', '1', '1'],['2', '1'],[],['2'],[],['2', '1', '1'],[]];
 var boardRemove13win6 = [['2', '1', '1'],['1', '1', '1'],['2', '1'],['1', '2', '1', '2', '2'],[],['2', '1', '1', '2'],['1']];
+
+var myfunc = playFns.myfunc;
 
 function copyBoard(boardArr){
 	var newBoard = [];
@@ -23,27 +26,63 @@ function copyBoard(boardArr){
 	});
 	return newBoard;
 }
+function promWrapper(returnVal){
+	return Promise.resolve(returnVal);
+}
+	function mockwait(){
+		return new Promise(function(fulfill, reject){
+			console.log('in mockwait')
+			console.log(myfunc());
+			console.log(myfunc());
+			console.log(myfunc());
+			setTimeout(fulfill, 1000);
+		});
+	}
 describe('selecting move type', function(){
 	var game = new Game(namesArr, 7, 6);
 	game.board = copyBoard(boardRemove13win6);
+
+	it('should return true', function(){
+		myfunc = sinon.stub(playFns, 'myfunc');
+		myfunc.onCall(0).returns('a')
+		myfunc.onCall(1).returns('b')
+		myfunc.onCall(2).returns('c')
+		// myfunc = function(){
+		// 	return '2'
+		// }
+		// myfunc = sinon.spy(myfunc);
+		// console.log(myfunc)
+		return mockwait().then(function fulfilled(){
+			expect(2).to.equal(2);
+			expect(myfunc.callCount).to.equal(3)
+		})
+	});
+
 	it('should not allow selections other than "a" or "r"', function(){
 		game.moveType = 'r';
-		promtAndInput = sinon.stub();
-		promtAndInput.onCall(0).returns('x');
-		promtAndInput.onCall(1).returns('add');
-		promtAndInput.onCall(2).returns('remove');
-		promtAndInput.onCall(3).returns('a');
-		promtAndInput.onCall(4).returns('4');
-		var getPossSpy = sinon.spy(promtAndInput);
-		
+		// promtAndInput = function(){
+		// 	return 'a'
+		// }
 
-		// console.log('hi!!!!!!!!!!!!')
+		// var process = {}
+		promtAndInput = sinon.stub(playFns, 'promtAndInput');
+		// promtAndInput.onCall(0).returns('x');
+		// promtAndInput.onCall(1).returns('add');
+		// promtAndInput.onCall(2).returns('remove');
+		promtAndInput.onCall(0).returns(promWrapper('a'));
+		promtAndInput.onCall(1).returns(promWrapper('4'));
+		
+		getPoss = sinon.spy(getPoss);
+		
+		// console.log(promtAndInput)
+		 console.log('hi!!!!!!!!!!!!')
 
 		return promptRow(game['1'], game)
 		.then(function(strCol){
-			console.log('!!!!!!!!!!hi')
-			return expect(game.moveType).to.equal('a') 
-			// && assert.equal(getPossSpy.callCount, 5));
+			console.log('!!!!!!!!!!hi', strCol)
+			console.log(promtAndInput)
+			expect(game.moveType).to.equal('a'); 
+			expect(getPoss.callCount).to.equal(2);
 		});
 	});
 });
@@ -51,7 +90,7 @@ xdescribe('selecting columns to remove from', function(){
 	var game = new Game(namesArr, 7, 6);
 	
 	it('should change to add if board is empty', function(){
-		promtAndInput = sinon.stub();
+		promtAndInput = sinon.stub(playFns, 'promtAndInput');
 		promtAndInput.onCall(0).returns('r');
 		promtAndInput.onCall(1).returns('6');
 		return promptRow(game['1'], game)
@@ -62,7 +101,7 @@ xdescribe('selecting columns to remove from', function(){
 	});
 	it('should change to add if no valid options', function(){
 		game.board = copyBoard(boardNoRemoves);
-		promtAndInput = sinon.stub();
+		promtAndInput = sinon.stub(playFns, 'promtAndInput');
 		promtAndInput.onCall(0).returns('r');
 		promtAndInput.onCall(1).returns('6');
 		return promptRow(game['1'], game)
@@ -73,17 +112,17 @@ xdescribe('selecting columns to remove from', function(){
 	});
 	it('should not allow selection of a collumn without that players peice at bottom', function(){
 		game.board = copyBoard(boardRemove13win6);
-		promtAndInput = sinon.stub();
+		promtAndInput = sinon.stub(playFns, 'promtAndInput');
 		promtAndInput.onCall(0).returns('r');
 		promtAndInput.onCall(1).returns('2');
 		promtAndInput.onCall(2).returns('4');
 		promtAndInput.onCall(3).returns('5');
 		promtAndInput.onCall(4).returns('6');
-		var getPossSpy = sinon.spy(promtAndInput);
+		var getPoss = sinon.spy(promtAndInput);
 		
 		return promptRow(game['1'], game)
 		.then(function(strCol){
-			assert.equal(getPossSpy.callCount, 5);
+			assert.equal(getPoss.callCount, 5);
 			promtAndInput.restore();
 			process.stdout.write.restore();
 
@@ -92,12 +131,14 @@ xdescribe('selecting columns to remove from', function(){
 	
 });
 xdescribe('removing piece', function(){
-	var game, gameWinSpy;
+	var game;
 	beforeEach(function(){
 		game = new Game(['player1', 'player2'], 7, 6);
 		game.board = copyBoard(boardRemove13win6);
-		gameWinSpy = sinon.spy(game.checkWin);
-		promtAndInput = sinon.stub();
+		game.checkWin = sinon.spy(game.checkWin);
+		// var process = {}
+
+		promtAndInput = sinon.stub(playFns, 'promtAndInput');
 			promtAndInput.onCall(0).returns('r');
 			promtAndInput.onCall(1).returns('6');
 			promtAndInput.onCall(2).returns('r');
@@ -140,7 +181,7 @@ xdescribe('removing piece', function(){
 	it('should correctly calculate win on removal', function(done){
 		nextTurn(game)
 		.then(function(){
-			assert(gameWinSpy).returned(true);
+			assert(game.checkWin).returned(true);
 			promtAndInput.restore();
 			game.checkWin.restore();
 			done();
