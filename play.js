@@ -1,7 +1,13 @@
 var Game = require('./game');
 var Promise = require('bluebird');
 
-var playGame = function(){
+var play = {
+	promtAndInput: promtAndInput,
+	getPoss: getPoss,
+	playAgain: playAgain
+};
+
+function playGame(){
 	var game;
 	prepGame()
 	.then(function(namesArr){
@@ -10,11 +16,11 @@ var playGame = function(){
 		game = new Game(namesArr, 7, 6);
 		return nextTurn(game);
 	});
-};
+}
 
 //prompts for how many players and player names
 //returns promise for player name(s)
-var prepGame = function(){
+function prepGame(){
 	var namesArr = [];
 	var numPlayers; //will be string not number
 	
@@ -26,31 +32,28 @@ var prepGame = function(){
 		if (numPlayers === '2') return getPlayerName('Enter player two\'s name ', namesArr.slice(), namesArr);
 		else return namesArr;
 	});
-};
+}
 
 //prompts user for something based on message
 //only accepts answers in choices array
 //returns a promise for a string
-var getPoss = function(message, choicesArr, errMessage){
-	console.log('running getPoss')
-	console.log(promtAndInput.toString())
-	return promtAndInput(message)
+function getPoss(message, choicesArr, errMessage){
+	return play.promtAndInput(message)
 	.then(function(resp){
-		console.log('resp gotten from promptAndInput')
 		if (!choicesArr.some(function(choice){
 			return choice === resp;
 		})) {
-			process.stdout.write(errMessage);
-			return getPoss(message, choicesArr, errMessage);
+			console.log(errMessage);
+			return play.getPoss(message, choicesArr, errMessage);
 		} else return resp;
 	});
-};
+}
 
 //prompts for player name
 //error checks for duplicates against arr (existing player and 'Computer')
 // pushes name on to namesArr
 //returns promise for namesArr
-var getPlayerName = function(message, dupArr, namesArr){
+function getPlayerName(message, dupArr, namesArr){
 	var name;
 	dupArr.push('Computer');
 	return promtAndInput(message)
@@ -65,11 +68,9 @@ var getPlayerName = function(message, dupArr, namesArr){
 			return namesArr;
 		}
 	});
-};
+}
 
-
-
-var nextTurn = function(game){
+function nextTurn(game){
 	//prompt for row to add
 	return promptRow(game[game.active], game)
 	.then(function(strCol){
@@ -77,25 +78,31 @@ var nextTurn = function(game){
 		game.moveType === 'a' ? game.board[colNum].push(game.active) : game.board[colNum].shift();
 		if (game.checkWin(colNum)){
 			game.printWin();
-			return playAgain(game);
+			return play.playAgain(game);
 		} else {
 			game.active = game.active === '1' ? '2' : '1'; 
 			return nextTurn(game);
 		}
 	});
-};
+}
 
 
 //returns promise for col num to play (string)
-var promptRow = function(player, game){
+function promptRow(player, game){
 	console.log('It\'s ' + player.name + '\'s turn.');
 	//no ai, computer just plays random
-	if (player.name === 'Computer') return Promise.resolve(Math.floor(Math.random()*game.board.length).toString());
-	else {
+	if (player.name === 'Computer') {
+		function randCol(){
+			return Math.floor(Math.random()*(game.board.length-1)).toString();
+		}
+		do {
+			var col = randCol();
+		} while (game.board[col].length>game.height);
+		return Promise.resolve(col);
+	} else {
 		game.printBoard();
-		return getPoss('Do you want to add a piece or remove one?(a/r) ', ['a', 'r'], 'That\'s not a valid choice.  Please type "a" or "r".')
+		return play.getPoss('Do you want to add a piece or remove one?(a/r) ', ['a', 'r'], 'That\'s not a valid choice.  Please type "a" or "r".')
 		.then(function(answer){
-			console.log('GotToHERE!!!!!')
 			if(answer === 'a'){
 				return addPiece(game);
 			} else {
@@ -105,48 +112,42 @@ var promptRow = function(player, game){
 					if (game.board[i][0] === game.active) choices.push(String(i));
 				}
 				if (!choices.length) {
-					process.stdout.write('Sorry, you do not have any peices at the bottom of the board.\n');
+					console.log('Sorry, you do not have any pieces at the bottom of the board.');
 					return addPiece(game);
 				}
 				game.moveType = 'r';
-				return getPoss('Enter a collumn to remove your piece from: ', choices, 'Sorry, you can only remove from a collumn with your piece at the bottom')
+				return play.getPoss('Enter a column to remove your piece from: ', choices, 'Sorry, you can only remove from a column with your piece at the bottom');
 			}
 
 		});
 
 
 		}
-};
+}
 
 function addPiece(game){
 	game.moveType = 'a';
 	var choices = [];
 		for(var i=0; i<game.board.length; i++){
-			choices.push(i.toString());
+			if (game.board[i].length<game.height) choices.push(i.toString());
 		}
-		return getPoss('Enter a collumn number to drop your piece ', choices, 'That\'s not a valid choice. Please try again. ');
+		return play.getPoss('Enter a column number to drop your piece ', choices, 'That\'s not a valid choice. Please try again. ');
 }
-
-
-// remove path
 
 //prompt + stdin data return wrapped in a promise to allow chaining
 //returns promise for data (string)
-var promtAndInput = function(message){
-	console.log('running prompt')
+function promtAndInput(message){
 	var returnData;
 	return new Promise(function(fulfill, reject){
-		// console.log(message)
 		process.stdout.write(message);
 		process.stdin.once('data', function(data) {
 			returnData = data.toString().trim(); 
-			console.log('prompt returning', returnData)
 			fulfill(returnData);
 		});
 	});
 }
 
-var playAgain = function(game){
+function playAgain(game){
 	return getPoss('Do you want to play again? (y/n) ', ['y', 'n'], 'That\'s not a valid choice. Please try again. ')
 	.then(function(answer){
 		if (answer === 'y'){
@@ -158,21 +159,14 @@ var playAgain = function(game){
 			process.kill(0);
 		}
 	});
-};
-
-// playGame();
-
-var myfunc = function(){
-	return 'myfunc';
 }
 
+
 module.exports = {
-	myfunc: myfunc,
+	play: play,
 	playGame: playGame,
-	getPoss: getPoss,
 	promptRow: promptRow,
 	nextTurn: nextTurn,
-	promtAndInput: promtAndInput
 };
 
 

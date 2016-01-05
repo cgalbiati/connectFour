@@ -70,7 +70,6 @@ Game.prototype.checkWin = function(colNum){
 	}
 
 	function makeRowsAndDiags(rowNum){
-		console.log('checking for', rowNum)
 		var diagUpArr = [];
 		var diagDownArr = [];
 		var rowArr = [];
